@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Ok};
+use anyhow::{anyhow, Context as ErrorContext, Ok};
 use reqwest::{
     blocking::{Client, RequestBuilder},
     header::{HeaderMap, HeaderName, HeaderValue},
@@ -10,6 +10,8 @@ use std::{
     str::FromStr,
 };
 
+use crate::context::Context;
+
 #[derive(PartialEq, Eq)]
 enum ParserState {
     Base,
@@ -17,7 +19,11 @@ enum ParserState {
     Body,
 }
 
-pub fn parse_http_file(client: &Client, path: &String) -> Result<RequestBuilder, anyhow::Error> {
+pub fn parse_http_file(
+    context: &mut Context,
+    client: &Client,
+    path: &String,
+) -> Result<RequestBuilder, anyhow::Error> {
     let mut method: Option<Method> = None;
     let mut url: Option<Url> = None;
     let mut version: Option<Version> = None;
@@ -30,13 +36,25 @@ pub fn parse_http_file(client: &Client, path: &String) -> Result<RequestBuilder,
         let trimmed = line.trim().to_string();
         let mut chunks = trimmed.split_ascii_whitespace();
 
+        // skip comment lines
+        if trimmed.starts_with("#") {
+            continue;
+        }
+
         match state {
             ParserState::Base => {
+                // skip empty lines
                 if trimmed.is_empty() {
                     continue;
                 }
+                // parse request variables
+                if trimmed.starts_with("@") {
+                    parse_variable(context, &trimmed)?;
+                    continue;
+                }
+                // parse request line
                 method = Some(parse_method(chunks.next())?);
-                url = Some(parse_url(chunks.next())?);
+                url = Some(parse_url(context, chunks.next())?);
                 version = Some(parse_version(chunks.next())?);
                 state = ParserState::Header;
             }
@@ -45,7 +63,7 @@ pub fn parse_http_file(client: &Client, path: &String) -> Result<RequestBuilder,
                     state = ParserState::Body;
                     continue;
                 }
-                let (key, val) = parse_header(chunks.next(), chunks.next())?;
+                let (key, val) = parse_header(context, chunks.next(), chunks.next())?;
                 headers.insert(key, val);
             }
             ParserState::Body => {
@@ -63,7 +81,8 @@ pub fn parse_http_file(client: &Client, path: &String) -> Result<RequestBuilder,
         .headers(headers);
 
     if !body.is_empty() {
-        builder = builder.body(body.join("\n"));
+        let rendered_body = context.render(&body.join("\n"))?;
+        builder = builder.body(rendered_body);
     }
 
     Ok(builder)
@@ -74,6 +93,18 @@ fn read_lines(path: &String) -> Result<io::Lines<io::BufReader<File>>, anyhow::E
     Ok(io::BufReader::new(file).lines())
 }
 
+fn parse_variable(context: &mut Context, line: &String) -> anyhow::Result<()> {
+    let parts: Vec<&str> = line.split('=').map(|p| p.trim()).collect();
+    if parts.len() != 2 {
+        anyhow::bail!("Invalid variable definition: {}", line);
+    }
+    let key = parts[0].trim_start_matches('@');
+    if !context.contains(key) {
+        context.variable(key, parts[1]);
+    }
+    Ok(())
+}
+
 fn parse_method(value: Option<&str>) -> Result<Method, anyhow::Error> {
     let str_value = value.unwrap_or_default();
     let method = Method::from_str(str_value)
@@ -81,9 +112,10 @@ fn parse_method(value: Option<&str>) -> Result<Method, anyhow::Error> {
     Ok(method)
 }
 
-fn parse_url(value: Option<&str>) -> anyhow::Result<Url> {
+fn parse_url(contex: &Context, value: Option<&str>) -> anyhow::Result<Url> {
     let str_value = value.unwrap_or_default();
-    let url = Url::parse(str_value)
+    let rendered = contex.render(str_value)?;
+    let url = Url::parse(&rendered)
         .with_context(|| format!("Url should be valid, got \"{}\"", str_value))?;
     Ok(url)
 }
@@ -100,16 +132,18 @@ fn parse_version(value: Option<&str>) -> anyhow::Result<Version> {
 }
 
 fn parse_header(
+    context: &Context,
     key: Option<&str>,
     value: Option<&str>,
 ) -> anyhow::Result<(HeaderName, HeaderValue)> {
     let str_key = key.unwrap_or_default();
     let str_val = value.unwrap_or_default();
     let key = str_key.strip_suffix(":").unwrap_or_default();
+    let rendered_val = context.render(str_val)?;
     Ok((
         HeaderName::from_str(key)
             .with_context(|| format!("Invalid HTTP header key \"{}\"", key))?,
-        HeaderValue::from_str(str_val)
-            .with_context(|| format!("Invalid HTTP header value \"{}\"", str_val))?,
+        HeaderValue::from_str(&rendered_val)
+            .with_context(|| format!("Invalid HTTP header value \"{}\"", rendered_val))?,
     ))
 }

@@ -8,9 +8,21 @@ Krill is a personal learning project to get to know the Rust programming languag
 
 Example requests use Postman Echo service.
 
+Simple requests
+
 ```shell
-cargo run -- -p examples/delete.http
-cargo run -- -p examples/get_notfound.http
-cargo run -- -p examples/get.http
-cargo run -- -p examples/post.http
+cargo run -- -f examples/delete.http
+cargo run -- -f examples/get_notfound.http
+cargo run -- -f examples/get.http
+cargo run -- -f examples/post.http
+```
+
+With variables from command line, environment, and request
+
+```shell
+KRILL_ENV=var_from_env cargo run -- \
+  -f examples/variables.http \
+  -p query=foo \
+  -p header=bar \
+  -p value=baz
 ```
