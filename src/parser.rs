@@ -94,7 +94,8 @@ fn read_lines(path: &String) -> anyhow::Result<io::Lines<io::BufReader<File>>> {
 }
 
 fn parse_variable(context: &mut Context, line: &String) -> anyhow::Result<()> {
-    let parts: Vec<&str> = line.split('=').map(|p| p.trim()).collect();
+    let rendered = &context.render(line)?;
+    let parts: Vec<&str> = rendered.split('=').map(|p| p.trim()).collect();
     if parts.len() != 2 {
         anyhow::bail!("Invalid variable definition: {}", line);
     }

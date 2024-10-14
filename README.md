@@ -26,3 +26,9 @@ KRILL_ENV=var_from_env cargo run -- \
   -p header=bar \
   -p value=baz
 ```
+
+With dynamic variables
+
+```shell
+cargo run examples/dynamic.http
+```

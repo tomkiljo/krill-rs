@@ -1,0 +1,149 @@
+@requestId = {{$randomGUID}}
+
+POST https://postman-echo.com/post HTTP/1.1
+Content-Type: application/json
+User-Agent: {{$randomUserAgent}}
+X-Request-Id: {{requestId}}
+
+{
+  "system": {
+    "os": "{{$systemOS}}",
+    "arch": "{{$systemArch}}",
+    "family": "{{$systemFamily}}",
+    "time": {
+      "utc": {
+        "timestamp_default": "{{$timestamp}}",
+        "timestamp_unix": "{{$timestamp format='unix'}}",
+        "timestamp_unix_millis": "{{$timestamp format='unix_millis'}}",
+        "timestamp_unix_mircos": "{{$timestamp format='unix_micros'}}",
+        "timestamp_rfc2822": "{{$timestamp format='rfc2822'}}",
+        "timestamp_iso8601": "{{$timestamp format='iso8601'}}",
+        "timestamp_iso8601_millis": "{{$timestamp format='iso8601_millis'}}",
+        "timestamp_iso8601_nanos": "{{$timestamp format='iso8601_nanos'}}",
+        "timestamp_rfc3339": "{{$timestamp format='rfc3339'}}",
+        "timestamp_rfc3339_millis": "{{$timestamp format='rfc3339_millis'}}",
+        "timestamp_rfc3339_nanos": "{{$timestamp format='rfc3339_nanos'}}"
+      },
+      "local": {
+        "timestamp_rfc2822": "{{$timestamp format='rfc2822' offset='local'}}",
+        "timestamp_iso8601": "{{$timestamp format='iso8601' offset='local'}}",
+        "timestamp_rfc3339": "{{$timestamp format='rfc3339' offset='local'}}"
+      },
+      "offset_pst": {
+        "timestamp_rfc2822": "{{$timestamp format='rfc2822' offset='-08:00'}}",
+        "timestamp_iso8601": "{{$timestamp format='iso8601' offset='-08:00'}}",
+        "timestamp_rfc3339": "{{$timestamp format='rfc3339' offset='-08:00'}}"
+      }
+    }
+  },
+  "boolean": {
+    "default": {{$randomBoolean}},
+    "with_25percent_true_ratio": {{$randomBoolean ratio=25}}
+  },
+  "int": {
+    "default": {{$randomInt}},
+    "with_min_max": {{$randomInt min=-100 max=100}}
+  },
+  "number": {
+    "format_one_to_nine": {{$randomNumber format='1.^'}},
+    "format_zero_to_nine": {{$randomNumber format='1.#'}}
+  },
+  "guid": "{{$randomGUID}}",
+  "uuid": {
+    "uuidv1": "{{$randomUUIDv1}}",
+    "uuidv3": "{{$randomUUIDv3}}",
+    "uuidv4": "{{$randomUUIDv4}}",
+    "uuidv5": "{{$randomUUIDv5}}"
+  },
+  "color": {
+    "hex_color": "{{$randomHexColor}}",
+    "rgb_color": "{{$randomRGBColor}}",
+    "rgba_color": "{{$randomRGBAColor}}",
+    "hsl_color": "{{$randomHSLColor}}",
+    "hsla_color": "{{$randomHSLAColor}}"
+  },
+  "lorem": {
+    "word": "{{$randomWord}}",
+    "words": "{{$randomWord count=5}}",
+    "words_range": "{{$randomWord min=2 max=4 sep='-'}}",
+    "sentence": "{{$randomSentence}}",
+    "sentences": "{{$randomSentence count=2}}",
+    "sentences_range": "{{$randomSentence min=2 max=4}}",
+    "paragraph": "{{$randomParagraph sep='\\n'}}"
+  },
+  "names": {
+    "full_name": "{{$randomFullName}}",
+    "first_name": "{{$randomFirstName}}",
+    "last_name": "{{$randomLastName}}",
+    "name_prefix": "{{$randomNamePrefix}}",
+    "name_suffix": "{{$randomNameSuffix}}"
+  },
+  "job": {
+    "title": "{{$randomJobTitle}}",
+    "field": "{{$randomJobField}}",
+    "seniority": "{{$randomJobSeniority}}",
+    "position": "{{$randomJobPosition}}"
+  },
+  "company": {
+    "company_name_suffix": "{{$randomCompanySuffix}}",
+    "company_name": "{{$randomCompanyName}}",
+    "buzzword_middle": "{{$randomBuzzwordMiddle}}",
+    "buzzword_tail": "{{$randomBuzzwordTail}}",
+    "buzzword": "{{$randomBuzzword}}",
+    "catch_phrase": "{{$randomCatchPhrase}}",
+    "bs_verb": "{{$randomBSVerb}}",
+    "bs_adj": "{{$randomBSAdj}}",
+    "bs_noun": "{{$randomBSNoun}}",
+    "bs": "{{$randomBS}}",
+    "profession": "{{$randomProfession}}",
+    "industry": "{{$randomIndustry}}"
+  },
+  "address": {
+    "city_prefix": "{{$randomCityPrefix}}",
+    "city_suffix": "{{$randomCitySuffix}}",
+    "city_name": "{{$randomCityName}}",
+    "country_name": "{{$randomCountryName}}",
+    "country_code": "{{$randomCountryCode}}",
+    "street_suffix": "{{$randomStreetSuffix}}",
+    "street_name": "{{$randomStreetName}}",
+    "time_zone": "{{$randomTimeZone}}",
+    "state_name": "{{$randomStateName}}",
+    "state_abbr": "{{$randomStateAbbr}}",
+    "secondary_address_type": "{{$randomSecondaryAddressType}}",
+    "secondary_address": "{{$randomSecondaryAddress}}",
+    "zip_code": "{{$randomZipCode}}",
+    "post_code": "{{$randomPostCode}}",
+    "building_number": "{{$randomBuildingNumber}}",
+    "latitude": "{{$randomLatitude}}",
+    "longitude": "{{$randomLongitude}}",
+    "geohash": "{{$randomGeohash}}"
+  },
+  "filesystem": {
+    "file_path": "{{$randomFilePath}}",
+    "file_name": "{{$randomFileName}}",
+    "file_extension": "{{$randomFileExtension}}",
+    "dir_path": "{{$randomDirPath}}",
+    "mime_type": "{{$randomMimeType}}",
+    "semver": "{{$randomSemver}}",
+    "semver_stable": "{{$randomSemverStable}}",
+    "semver_unstable": "{{$randomSemverUnstable}}"
+  },
+  "internet": {
+    "domain_suffix": "{{$randomDomainSuffix}}",
+    "safe_email": "{{$randomSafeEmail}}",
+    "username": "{{$randomUsername}}",
+    "password": "{{$randomPassword}}",
+    "ip_v4": "{{$randomIPv4}}",
+    "ip_v6": "{{$randomIPv6}}",
+    "mac_address": "{{$randomMACAddress}}",
+    "user_agent": "{{$randomUserAgent}}"
+  },
+  "currency": {
+    "currency_code": "{{$randomCurrencyCode}}",
+    "currency_name": "{{$randomCurrencyName}}",
+    "currency_symbol": "{{$randomCurrencySymbol}}"
+  },
+  "credit_card": "{{$randomCreditCardNumber}}",
+  "bic": "{{$randomBIC}}",
+  "isin": "{{$randomISIN}}"
+}

@@ -8,5 +8,5 @@ X-Krill-Header: {{header}}
 
 {
   "parameter": "{{value}}",
-  "env_variable": "{{env KRILL_ENV}}"
+  "env_variable": "{{$env KRILL_ENV}}"
 }
