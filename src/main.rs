@@ -24,6 +24,10 @@ struct Args {
     /// in the form of key=value
     #[arg(short, long, name = "key=value", value_parser = parse_param)]
     param: Vec<KeyValue>,
+
+    /// Show debug information
+    #[arg(short, long)]
+    debug: bool,
 }
 
 fn parse_param(s: &str) -> anyhow::Result<KeyValue> {
@@ -37,14 +41,16 @@ fn parse_param(s: &str) -> anyhow::Result<KeyValue> {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut context = Context::new();
-    for param in args.param {
-        context.variable(&param.0, &param.1);
+    if args.debug {
+        // Print backtrace when a panic occurs
+        std::env::set_var("RUST_BACKTRACE", "1");
     }
+
+    let mut context = Context::from_args(args.param);
 
     let client = Client::new();
     let request = parse_http_file(&mut context, &client, &args.file)?;
-    let response = request.send();
+    let response = request.send()?;
 
     output_http(response)
 }

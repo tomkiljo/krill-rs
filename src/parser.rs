@@ -23,7 +23,7 @@ pub fn parse_http_file(
     context: &mut Context,
     client: &Client,
     path: &String,
-) -> Result<RequestBuilder, anyhow::Error> {
+) -> anyhow::Result<RequestBuilder> {
     let mut method: Option<Method> = None;
     let mut url: Option<Url> = None;
     let mut version: Option<Version> = None;
@@ -88,7 +88,7 @@ pub fn parse_http_file(
     Ok(builder)
 }
 
-fn read_lines(path: &String) -> Result<io::Lines<io::BufReader<File>>, anyhow::Error> {
+fn read_lines(path: &String) -> anyhow::Result<io::Lines<io::BufReader<File>>> {
     let file = File::open(path).with_context(|| format!("Failed to open file \"{}\"", path))?;
     Ok(io::BufReader::new(file).lines())
 }
@@ -105,7 +105,7 @@ fn parse_variable(context: &mut Context, line: &String) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn parse_method(value: Option<&str>) -> Result<Method, anyhow::Error> {
+fn parse_method(value: Option<&str>) -> anyhow::Result<Method> {
     let str_value = value.unwrap_or_default();
     let method = Method::from_str(str_value)
         .with_context(|| format!("Method should be a valid HTTP verb, got \"{}\"", str_value))?;
