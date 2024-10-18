@@ -10,7 +10,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::context::Context;
+use crate::context::RequestContext;
 
 #[derive(PartialEq, Eq)]
 enum ParserState {
@@ -20,9 +20,8 @@ enum ParserState {
 }
 
 pub fn parse_http_file(
-    context: &mut Context,
+    context: &mut RequestContext,
     client: &Client,
-    path: &String,
 ) -> anyhow::Result<RequestBuilder> {
     let mut method: Option<Method> = None;
     let mut url: Option<Url> = None;
@@ -32,7 +31,7 @@ pub fn parse_http_file(
 
     let mut state = ParserState::Base;
 
-    for line in read_lines(path)?.map_while(Result::ok) {
+    for line in read_lines(context.file())?.map_while(Result::ok) {
         let trimmed = line.trim().to_string();
         let mut chunks = trimmed.split_ascii_whitespace();
 
@@ -88,12 +87,12 @@ pub fn parse_http_file(
     Ok(builder)
 }
 
-fn read_lines(path: &String) -> anyhow::Result<io::Lines<io::BufReader<File>>> {
+fn read_lines(path: &str) -> anyhow::Result<io::Lines<io::BufReader<File>>> {
     let file = File::open(path).with_context(|| format!("Failed to open file \"{}\"", path))?;
     Ok(io::BufReader::new(file).lines())
 }
 
-fn parse_variable(context: &mut Context, line: &String) -> anyhow::Result<()> {
+fn parse_variable(context: &mut RequestContext, line: &String) -> anyhow::Result<()> {
     let rendered = &context.render(line)?;
     let parts: Vec<&str> = rendered.split('=').map(|p| p.trim()).collect();
     if parts.len() != 2 {
@@ -113,7 +112,7 @@ fn parse_method(value: Option<&str>) -> anyhow::Result<Method> {
     Ok(method)
 }
 
-fn parse_url(contex: &Context, value: Option<&str>) -> anyhow::Result<Url> {
+fn parse_url(contex: &RequestContext, value: Option<&str>) -> anyhow::Result<Url> {
     let str_value = value.unwrap_or_default();
     let rendered = contex.render(str_value)?;
     let url = Url::parse(&rendered)
@@ -133,7 +132,7 @@ fn parse_version(value: Option<&str>) -> anyhow::Result<Version> {
 }
 
 fn parse_header(
-    context: &Context,
+    context: &RequestContext,
     key: Option<&str>,
     value: Option<&str>,
 ) -> anyhow::Result<(HeaderName, HeaderValue)> {

@@ -30,5 +30,11 @@ KRILL_ENV=var_from_env cargo run -- \
 With dynamic variables
 
 ```shell
-cargo run examples/dynamic.http
+cargo run -- -f examples/dynamic.http
+```
+
+With includes
+
+```shell
+cargo run -- -f examples/include/requst.http
 ```

@@ -2,7 +2,7 @@ mod context;
 mod output;
 mod parser;
 
-use crate::context::Context;
+use crate::context::RequestContext;
 use crate::output::output_http;
 use crate::parser::parse_http_file;
 
@@ -15,7 +15,7 @@ struct KeyValue(String, String);
 /// A small and fast CLI for testing REST APIs
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Path to a HTTP request file
     #[arg(short, long, name = "FILE")]
     file: String,
@@ -39,17 +39,16 @@ fn parse_param(s: &str) -> anyhow::Result<KeyValue> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
+    let args: Args = Args::parse();
 
     if args.debug {
         // Print backtrace when a panic occurs
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
-    let mut context = Context::from_args(args.param);
-
+    let mut context = RequestContext::from_args(args)?;
     let client = Client::new();
-    let request = parse_http_file(&mut context, &client, &args.file)?;
+    let request = parse_http_file(&mut context, &client)?;
     let response = request.send()?;
 
     output_http(response)

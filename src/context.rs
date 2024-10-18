@@ -35,36 +35,55 @@ use fake::{
     uuid::{UUIDv1, UUIDv3, UUIDv4, UUIDv5},
     Fake,
 };
-use handlebars::{handlebars_helper, Handlebars};
-use std::{cmp, collections::BTreeMap, env, str::FromStr};
+use handlebars::{
+    handlebars_helper, Context as VariableContext, Handlebars, Helper, HelperResult, Output,
+    RenderContext,
+};
+use std::{cmp, collections::BTreeMap, env, path::Path, str::FromStr};
 
-use crate::KeyValue;
+use crate::{Args, KeyValue};
 
-pub struct Context<'ctx> {
+pub struct RequestContext<'ctx> {
     data: BTreeMap<String, String>,
     registry: Handlebars<'ctx>,
 }
 
-impl<'ctx> Context<'ctx> {
+impl<'ctx> RequestContext<'ctx> {
     pub fn _new() -> Self {
         let data = BTreeMap::new();
         let registry = Self::new_registry();
-        Context { data, registry }
+        RequestContext { data, registry }
     }
 
-    pub fn from_args(params: Vec<KeyValue>) -> Self {
-        let data: BTreeMap<String, String> = params
+    pub fn from_args(args: Args) -> anyhow::Result<Self> {
+        let mut data: BTreeMap<String, String> = args
+            .param
             .into_iter()
             .map(|KeyValue(key, value)| (key, value))
             .collect();
+
+        let work_dir = Path::new(&args.file)
+            .parent()
+            .ok_or(anyhow::Error::msg("invalid file path"))?;
+
+        data.insert(
+            "request::dir".to_string(),
+            work_dir.to_str().unwrap().to_string(),
+        );
+        data.insert("request::file".to_string(), args.file);
+
         let registry = Self::new_registry();
-        Context { data, registry }
+
+        Ok(RequestContext { data, registry })
     }
 
     fn new_registry() -> Handlebars<'ctx> {
         let mut registry = Handlebars::new();
         registry.register_escape_fn(handlebars::no_escape);
         registry.set_strict_mode(true);
+
+        registry.register_helper("$include", Box::new(include_helper));
+
         registry.register_helper("$env", Box::new(env_helper));
         registry.register_helper("$systemArch", Box::new(arch_helper));
         registry.register_helper("$systemOS", Box::new(os_helper));
@@ -185,6 +204,33 @@ impl<'ctx> Context<'ctx> {
     pub fn variable(&mut self, key: &str, value: &str) {
         self.data.insert(key.to_string(), value.to_string());
     }
+
+    pub fn file(&self) -> &str {
+        self.data.get("request::file").unwrap()
+    }
+}
+
+// Helper to include files
+fn include_helper(
+    h: &Helper,
+    hb: &Handlebars,
+    ctx: &VariableContext,
+    _: &mut RenderContext,
+    out: &mut dyn Output,
+) -> HelperResult {
+    let param = h.param(0).unwrap();
+    let path = Path::new(param.relative_path().unwrap());
+    let path = match path.is_absolute() {
+        true => path.to_path_buf(),
+        false => {
+            let work_dir = ctx.data()["request::dir"].as_str().unwrap();
+            Path::new(work_dir).join(path)
+        }
+    };
+    let content = std::fs::read_to_string(path).unwrap();
+    let rendered = hb.render_template_with_context(&content, ctx)?;
+    out.write(&rendered)?;
+    Ok(())
 }
 
 // Helper function to render environment variables
